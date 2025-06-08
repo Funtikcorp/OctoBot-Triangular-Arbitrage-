@@ -26,6 +26,10 @@ Note: the results do not account for fees during trades. This can have a signifi
 pip3 install -r requirements.txt
 ```
 
+The dependencies in `requirements.txt` are pinned to specific versions for
+consistent results. When new releases appear, update the version numbers in this
+file and rerun the installation command.
+
 ### Usage
 Start detection by running:
 ```

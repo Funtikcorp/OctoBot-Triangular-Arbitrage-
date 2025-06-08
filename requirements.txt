@@ -1,4 +1,4 @@
-ccxt
-networkx[default]
+ccxt==4.2.5
+networkx[default]==3.2.1
 
-OctoBot-Commons>=1.9, <1.10
+OctoBot-Commons==1.9.0
