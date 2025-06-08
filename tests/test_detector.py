@@ -1,6 +1,11 @@
 import pytest
 import octobot_commons.symbols as symbols
-from triangular_arbitrage.detector import ShortTicker, get_best_triangular_opportunity, get_best_opportunity
+from triangular_arbitrage.detector import (
+    ShortTicker,
+    get_best_triangular_opportunity,
+    get_best_opportunity,
+    get_symbol_from_key,
+)
 
 
 @pytest.fixture
@@ -12,6 +17,16 @@ def sample_tickers():
         ShortTicker(symbol=symbols.Symbol('LTC/USDT'), last_price=100),
         ShortTicker(symbol=symbols.Symbol('BCH/USDT'), last_price=200),
     ]
+
+
+def test_get_symbol_from_key_valid():
+    symbol = get_symbol_from_key('BTC/USDT')
+    assert isinstance(symbol, symbols.Symbol)
+    assert str(symbol) == 'BTC/USDT'
+
+
+def test_get_symbol_from_key_invalid():
+    assert get_symbol_from_key('INVALID') is None
 
 
 def test_get_best_triangular_opportunity_handles_empty_tickers():

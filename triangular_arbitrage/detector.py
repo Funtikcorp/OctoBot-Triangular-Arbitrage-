@@ -21,9 +21,13 @@ async def fetch_tickers(exchange):
 
 
 def get_symbol_from_key(key_symbol: str) -> symbols.Symbol:
+    """Return a :class:`~octobot_commons.symbols.Symbol` from ``key_symbol``.
+
+    If ``key_symbol`` cannot be parsed, ``None`` is returned.
+    """
     try:
         return symbols.parse_symbol(key_symbol)
-    except:
+    except ValueError:
         return None
 
 
