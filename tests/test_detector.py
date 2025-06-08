@@ -1,6 +1,13 @@
+import asyncio
 import pytest
 import octobot_commons.symbols as symbols
-from triangular_arbitrage.detector import ShortTicker, get_best_triangular_opportunity, get_best_opportunity
+from triangular_arbitrage.detector import (
+    ShortTicker,
+    get_best_triangular_opportunity,
+    get_best_opportunity,
+    get_exchange_data,
+    TickerFetchError,
+)
 
 
 @pytest.fixture
@@ -96,3 +103,43 @@ def test_get_best_opportunity_returns_correct_cycle_with_multiple_tickers():
     assert len(best_opportunity) >= 3  # Handling cycles with more than 3 tickers
     assert round(best_profit, 3) == 5.775
     assert all(isinstance(ticker, ShortTicker) for ticker in best_opportunity)
+
+
+def test_get_exchange_data_reports_fetch_error(monkeypatch):
+    class FailingExchange:
+        has = {'fetchTickers': True}
+
+        async def fetch_tickers(self):
+            raise get_exchange_data.__globals__['ccxt'].BaseError('fail')
+
+        def milliseconds(self):
+            return 0
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(
+        get_exchange_data.__globals__['ccxt'],
+        'binanceus',
+        FailingExchange,
+        raising=False,
+    )
+
+    with pytest.raises(TickerFetchError):
+        asyncio.run(get_exchange_data('binanceus'))
+
+
+def test_get_exchange_data_reports_instantiation_error(monkeypatch):
+    class BadExchange:
+        def __init__(self):
+            raise get_exchange_data.__globals__['ccxt'].BaseError('boom')
+
+    monkeypatch.setattr(
+        get_exchange_data.__globals__['ccxt'],
+        'badexchange',
+        BadExchange,
+        raising=False,
+    )
+
+    with pytest.raises(TickerFetchError):
+        asyncio.run(get_exchange_data('badexchange'))
