@@ -96,3 +96,18 @@ def test_get_best_opportunity_returns_correct_cycle_with_multiple_tickers():
     assert len(best_opportunity) >= 3  # Handling cycles with more than 3 tickers
     assert round(best_profit, 3) == 5.775
     assert all(isinstance(ticker, ShortTicker) for ticker in best_opportunity)
+
+
+@pytest.mark.asyncio
+async def test_run_detection_multiple_exchanges_event_loop(monkeypatch):
+    async def fake_get_multiple_exchange_last_prices(exchange_names, ignored_symbols, whitelisted_symbols=None):
+        return [
+            ShortTicker(symbol=symbols.Symbol('BTC/USDT'), last_price=30000),
+            ShortTicker(symbol=symbols.Symbol('ETH/BTC'), last_price=0.3),
+            ShortTicker(symbol=symbols.Symbol('ETH/USDT'), last_price=2000),
+        ]
+
+    monkeypatch.setattr(detector, 'get_multiple_exchange_last_prices', fake_get_multiple_exchange_last_prices)
+    best_opportunity, best_profit = await detector.run_detection_multiple_exchanges(['binance', 'kraken'])
+    assert len(best_opportunity) == 3
+    assert best_profit == 4.5
