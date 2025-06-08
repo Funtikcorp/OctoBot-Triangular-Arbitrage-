@@ -32,6 +32,14 @@ Start detection by running:
 python3 main.py
 ```
 
+### GUI Usage
+Launch the basic Tkinter interface with:
+```
+python3 -m triangular_arbitrage.gui
+```
+The window lets you start or stop the detection loop and displays the current
+best opportunity in a table.
+
 Example output on Binance:
 ```
 -------------------------------------------
