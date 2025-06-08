@@ -46,6 +46,14 @@ New 2.33873% binanceus opportunity:
 -------------------------------------------
 ```
 
+### Logging
+The log level can be adjusted by setting the `LOG_LEVEL` environment variable.
+For example, to enable debug logs run:
+```
+LOG_LEVEL=DEBUG python3 main.py
+```
+The default log level is `INFO`.
+
 ### Configuration
 To change the exchange edit `main.py` `exchange_name` value to the desired exchange. It should match the exchange [ccxt id value](https://github.com/ccxt/ccxt?tab=readme-ov-file#certified-cryptocurrency-exchanges)
 

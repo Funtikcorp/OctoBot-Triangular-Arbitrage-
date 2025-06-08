@@ -1,9 +1,19 @@
 import asyncio
+import logging
+import os
 
 import octobot_commons.symbols as symbols
 import octobot_commons.os_util as os_util
 
 import triangular_arbitrage.detector as detector
+
+
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     if hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
@@ -16,7 +26,7 @@ if __name__ == "__main__":
         s = time.perf_counter()
 
     # start arbitrage detection
-    print("Scanning...")
+    logger.info("Scanning...")
     exchange_name = "binanceus"  # allow pickable exchange_id from https://github.com/ccxt/ccxt/wiki/manual#exchanges
 
     best_opportunities, best_profit = asyncio.run(detector.run_detection(exchange_name))
@@ -32,9 +42,9 @@ if __name__ == "__main__":
 
     if best_opportunities is not None:
         # Display arbitrage detection result
-        print("-------------------------------------------")
+        logger.info("-------------------------------------------")
         total_profit_percentage = round((best_profit - 1) * 100, 5)
-        print(f"New {total_profit_percentage}% {exchange_name} opportunity:")
+        logger.info(f"New {total_profit_percentage}% {exchange_name} opportunity:")
         for i, opportunity in enumerate(best_opportunities):
             # Get the base and quote currencies
             base_currency = opportunity.symbol.base
@@ -52,14 +62,14 @@ if __name__ == "__main__":
             # 7. sell SOL for BTC at 0.00226
             # -------------------------------------------
             order_side = get_order_side(opportunity)
-            print(
+            logger.info(
                 f"{i + 1}. {order_side} {base_currency} "
                 f"{'with' if order_side == 'buy' else 'for'} "
                 f"{quote_currency} at {opportunity.last_price:.5f}")
-        print("-------------------------------------------")
+        logger.info("-------------------------------------------")
     else:
-        print("No opportunity detected")
+        logger.info("No opportunity detected")
 
     if benchmark:
         elapsed = time.perf_counter() - s
-        print(f"{__file__} executed in {elapsed:0.2f} seconds.")
+        logger.info(f"{__file__} executed in {elapsed:0.2f} seconds.")
