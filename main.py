@@ -17,9 +17,13 @@ if __name__ == "__main__":
 
     # start arbitrage detection
     print("Scanning...")
-    exchange_name = "binanceus"  # allow pickable exchange_id from https://github.com/ccxt/ccxt/wiki/manual#exchanges
+    exchange_names = [
+        "binanceus"
+    ]  # allow pickable exchange_id from https://github.com/ccxt/ccxt/wiki/manual#exchanges
 
-    best_opportunities, best_profit = asyncio.run(detector.run_detection(exchange_name))
+    best_opportunities, best_profit = asyncio.run(
+        detector.run_detection_multiple_exchanges(exchange_names)
+    )
 
 
     def opportunity_symbol(opportunity):
@@ -34,7 +38,8 @@ if __name__ == "__main__":
         # Display arbitrage detection result
         print("-------------------------------------------")
         total_profit_percentage = round((best_profit - 1) * 100, 5)
-        print(f"New {total_profit_percentage}% {exchange_name} opportunity:")
+        exchange_list = ", ".join(exchange_names)
+        print(f"New {total_profit_percentage}% {exchange_list} opportunity:")
         for i, opportunity in enumerate(best_opportunities):
             # Get the base and quote currencies
             base_currency = opportunity.symbol.base

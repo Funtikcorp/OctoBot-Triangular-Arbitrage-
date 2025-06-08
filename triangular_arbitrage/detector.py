@@ -3,6 +3,7 @@
 import ccxt.async_support as ccxt
 from typing import List, Tuple
 from dataclasses import dataclass
+import asyncio
 import networkx as nx
 
 import octobot_commons.symbols as symbols
@@ -111,5 +112,25 @@ async def get_exchange_last_prices(exchange_name, ignored_symbols, whitelisted_s
 async def run_detection(exchange_name, ignored_symbols=None, whitelisted_symbols=None, max_cycle=10):
     last_prices = await get_exchange_last_prices(exchange_name, ignored_symbols or [], whitelisted_symbols)
     # default is the best opportunity for all cycles
+    best_opportunity, best_profit = get_best_opportunity(last_prices, max_cycle=max_cycle)
+    return best_opportunity, best_profit
+
+
+async def get_multiple_exchange_last_prices(exchange_names, ignored_symbols, whitelisted_symbols=None):
+    tasks = [
+        get_exchange_last_prices(name, ignored_symbols, whitelisted_symbols)
+        for name in exchange_names
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    all_prices = []
+    for result in results:
+        if isinstance(result, Exception):
+            continue
+        all_prices.extend(result)
+    return all_prices
+
+
+async def run_detection_multiple_exchanges(exchange_names, ignored_symbols=None, whitelisted_symbols=None, max_cycle=10):
+    last_prices = await get_multiple_exchange_last_prices(exchange_names, ignored_symbols or [], whitelisted_symbols)
     best_opportunity, best_profit = get_best_opportunity(last_prices, max_cycle=max_cycle)
     return best_opportunity, best_profit
