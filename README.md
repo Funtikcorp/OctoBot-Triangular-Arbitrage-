@@ -29,7 +29,7 @@ pip3 install -r requirements.txt
 ### Usage
 Start detection by running:
 ```
-python3 main.py
+python3 -m triangular_arbitrage.cli --exchange binanceus
 ```
 
 Example output on Binance:
@@ -47,9 +47,12 @@ New 2.33873% binanceus opportunity:
 ```
 
 ### Configuration
-To change the exchange edit `main.py` `exchange_name` value to the desired exchange. It should match the exchange [ccxt id value](https://github.com/ccxt/ccxt?tab=readme-ov-file#certified-cryptocurrency-exchanges)
-
-You can also provide a list of symbol to ignore when calling `run_detection` using `ignored_symbols` and a list of symbol to whitelist using `whitelisted_symbols`.
+You can change the exchange and other options directly from the command line:
+```
+python3 -m triangular_arbitrage.cli --exchange binanceus --max-cycle 5 \
+    --ignored-symbols BTC/USDT ETH/USDT
+```
+`--ignored-symbols` and `--whitelisted-symbols` accept a space separated list of symbols.
 
 ## Help
 
