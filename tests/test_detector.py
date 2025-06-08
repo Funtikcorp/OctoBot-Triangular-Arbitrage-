@@ -96,3 +96,59 @@ def test_get_best_opportunity_returns_correct_cycle_with_multiple_tickers():
     assert len(best_opportunity) >= 3  # Handling cycles with more than 3 tickers
     assert round(best_profit, 3) == 5.775
     assert all(isinstance(ticker, ShortTicker) for ticker in best_opportunity)
+
+
+class _BaseDummyExchange:
+    def __init__(self):
+        self.closed = False
+        self.has = {"fetchTickers": True}
+
+    async def close(self):
+        self.closed = True
+
+    def milliseconds(self):
+        return 0
+
+
+def test_get_exchange_data_closes_on_fetch_error(monkeypatch):
+    from triangular_arbitrage import detector
+
+    created = {}
+
+    class DummyExchange(_BaseDummyExchange):
+        def __init__(self):
+            super().__init__()
+            created["inst"] = self
+
+    async def failing_fetch(_):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(detector, "fetch_tickers", failing_fetch)
+    monkeypatch.setattr(detector.ccxt, "Dummy", DummyExchange, raising=False)
+
+    with pytest.raises(RuntimeError):
+        import asyncio
+        asyncio.run(detector.get_exchange_data("Dummy"))
+    assert created["inst"].closed is True
+
+
+def test_get_exchange_data_closes_on_success(monkeypatch):
+    from triangular_arbitrage import detector
+
+    created = {}
+
+    class DummyExchange(_BaseDummyExchange):
+        def __init__(self):
+            super().__init__()
+            created["inst"] = self
+
+    async def success_fetch(_):
+        return {"A": 1}
+
+    monkeypatch.setattr(detector, "fetch_tickers", success_fetch)
+    monkeypatch.setattr(detector.ccxt, "Dummy", DummyExchange, raising=False)
+
+    import asyncio
+    tickers, _ = asyncio.run(detector.get_exchange_data("Dummy"))
+    assert created["inst"].closed is True
+    assert tickers == {"A": 1}
