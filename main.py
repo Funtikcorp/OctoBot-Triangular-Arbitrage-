@@ -1,25 +1,31 @@
 import asyncio
 
 import octobot_commons.symbols as symbols
-import octobot_commons.os_util as os_util
 
+from triangular_arbitrage.cli import parse_arguments
 import triangular_arbitrage.detector as detector
 
 if __name__ == "__main__":
-    if hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # Windows handles asynchronous event loops
-    
-    benchmark = os_util.parse_boolean_environment_var("IS_BENCHMARKING", "False")
-    if benchmark:
-        import time
+    args = parse_arguments()
 
+    if hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # Windows handles asynchronous event loops
+
+    if args.benchmark:
+        import time
         s = time.perf_counter()
 
     # start arbitrage detection
     print("Scanning...")
-    exchange_name = "binanceus"  # allow pickable exchange_id from https://github.com/ccxt/ccxt/wiki/manual#exchanges
 
-    best_opportunities, best_profit = asyncio.run(detector.run_detection(exchange_name))
+    best_opportunities, best_profit = asyncio.run(
+        detector.run_detection(
+            args.exchange,
+            ignored_symbols=args.ignored_symbols,
+            whitelisted_symbols=args.whitelisted_symbols,
+            max_cycle=args.max_cycle,
+        )
+    )
 
 
     def opportunity_symbol(opportunity):
@@ -34,7 +40,7 @@ if __name__ == "__main__":
         # Display arbitrage detection result
         print("-------------------------------------------")
         total_profit_percentage = round((best_profit - 1) * 100, 5)
-        print(f"New {total_profit_percentage}% {exchange_name} opportunity:")
+        print(f"New {total_profit_percentage}% {args.exchange} opportunity:")
         for i, opportunity in enumerate(best_opportunities):
             # Get the base and quote currencies
             base_currency = opportunity.symbol.base
@@ -60,6 +66,6 @@ if __name__ == "__main__":
     else:
         print("No opportunity detected")
 
-    if benchmark:
+    if args.benchmark:
         elapsed = time.perf_counter() - s
         print(f"{__file__} executed in {elapsed:0.2f} seconds.")
