@@ -1,6 +1,7 @@
 import pytest
 import octobot_commons.symbols as symbols
 from triangular_arbitrage.detector import ShortTicker, get_best_triangular_opportunity, get_best_opportunity
+from triangular_arbitrage.detector import get_symbol_from_key, get_last_prices
 
 
 @pytest.fixture
@@ -96,3 +97,28 @@ def test_get_best_opportunity_returns_correct_cycle_with_multiple_tickers():
     assert len(best_opportunity) >= 3  # Handling cycles with more than 3 tickers
     assert round(best_profit, 3) == 5.775
     assert all(isinstance(ticker, ShortTicker) for ticker in best_opportunity)
+
+
+def test_get_symbol_from_key_invalid_symbol(monkeypatch):
+    def fail_parse(_):
+        raise ValueError("invalid")
+
+    monkeypatch.setattr(symbols, "parse_symbol", fail_parse)
+    assert get_symbol_from_key("BAD/PAIR") is None
+
+
+def test_get_last_prices_skips_invalid_symbol(monkeypatch):
+    def maybe_parse(key):
+        if key == "BAD/PAIR":
+            raise ValueError("invalid")
+        return symbols.Symbol(key)
+
+    monkeypatch.setattr(symbols, "parse_symbol", maybe_parse)
+    exchange_time = 0
+    tickers = {
+        "BTC/USDT": {"close": 1, "timestamp": exchange_time},
+        "BAD/PAIR": {"close": 2, "timestamp": exchange_time},
+    }
+    result = get_last_prices(exchange_time, tickers, ignored_symbols=[])
+    assert len(result) == 1
+    assert str(result[0].symbol) == "BTC/USDT"
