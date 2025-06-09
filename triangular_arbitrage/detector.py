@@ -96,9 +96,13 @@ def get_best_opportunity(tickers: List[ShortTicker], max_cycle: int = 10) -> Tup
 async def get_exchange_data(exchange_name):
     exchange_class = getattr(ccxt, exchange_name)
     exchange = exchange_class()
-    tickers = await fetch_tickers(exchange)
-    exchange_time = exchange.milliseconds()
-    await exchange.close()
+    try:
+        tickers = await fetch_tickers(exchange)
+        exchange_time = exchange.milliseconds()
+    except Exception:
+        raise
+    finally:
+        await exchange.close()
     return tickers, exchange_time
 
 
