@@ -5,6 +5,11 @@ from typing import List, Tuple
 from dataclasses import dataclass
 import networkx as nx
 
+
+class TickerFetchError(Exception):
+    """Raised when ticker data cannot be retrieved from the exchange."""
+    pass
+
 import octobot_commons.symbols as symbols
 import octobot_commons.constants as constants
 
@@ -17,7 +22,10 @@ class ShortTicker:
 
 
 async def fetch_tickers(exchange):
-    return await exchange.fetch_tickers() if exchange.has['fetchTickers'] else []
+    try:
+        return await exchange.fetch_tickers() if exchange.has['fetchTickers'] else []
+    except ccxt.BaseError as exc:
+        raise TickerFetchError(f"Failed to fetch tickers: {exc}") from exc
 
 
 def get_symbol_from_key(key_symbol: str) -> symbols.Symbol:
@@ -94,11 +102,18 @@ def get_best_opportunity(tickers: List[ShortTicker], max_cycle: int = 10) -> Tup
 
 
 async def get_exchange_data(exchange_name):
-    exchange_class = getattr(ccxt, exchange_name)
-    exchange = exchange_class()
-    tickers = await fetch_tickers(exchange)
-    exchange_time = exchange.milliseconds()
-    await exchange.close()
+    try:
+        exchange_class = getattr(ccxt, exchange_name)
+        exchange = exchange_class()
+    except ccxt.BaseError as exc:
+        raise TickerFetchError(f"Failed to create exchange {exchange_name}: {exc}") from exc
+
+    try:
+        tickers = await fetch_tickers(exchange)
+        exchange_time = exchange.milliseconds()
+    finally:
+        await exchange.close()
+
     return tickers, exchange_time
 
 
