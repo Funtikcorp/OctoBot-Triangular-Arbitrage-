@@ -34,15 +34,28 @@ def is_delisted_symbols(exchange_time, ticker,
 
 
 def get_last_prices(exchange_time, tickers, ignored_symbols, whitelisted_symbols=None):
-    return [
-        ShortTicker(symbol=get_symbol_from_key(key),
-                    last_price=tickers[key]['close'])
-        for key, _ in tickers.items()
-        if tickers[key]['close'] is not None
-           and not is_delisted_symbols(exchange_time, tickers[key])
-           and str(get_symbol_from_key(key)) not in ignored_symbols
-           and (whitelisted_symbols is None or str(get_symbol_from_key(key)) in whitelisted_symbols)
-    ]
+    last_prices = []
+    for key, ticker in tickers.items():
+        symbol = get_symbol_from_key(key)
+        if symbol is None:
+            continue
+
+        if ticker['close'] is None:
+            continue
+
+        if is_delisted_symbols(exchange_time, ticker):
+            continue
+
+        symbol_str = str(symbol)
+        if symbol_str in ignored_symbols:
+            continue
+
+        if whitelisted_symbols is not None and symbol_str not in whitelisted_symbols:
+            continue
+
+        last_prices.append(ShortTicker(symbol=symbol, last_price=ticker['close']))
+
+    return last_prices
 
 
 def get_best_triangular_opportunity(tickers: List[ShortTicker]) -> Tuple[List[ShortTicker], float]:

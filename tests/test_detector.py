@@ -1,6 +1,11 @@
 import pytest
 import octobot_commons.symbols as symbols
-from triangular_arbitrage.detector import ShortTicker, get_best_triangular_opportunity, get_best_opportunity
+from triangular_arbitrage.detector import (
+    ShortTicker,
+    get_best_triangular_opportunity,
+    get_best_opportunity,
+    get_last_prices,
+)
 
 
 @pytest.fixture
@@ -96,3 +101,16 @@ def test_get_best_opportunity_returns_correct_cycle_with_multiple_tickers():
     assert len(best_opportunity) >= 3  # Handling cycles with more than 3 tickers
     assert round(best_profit, 3) == 5.775
     assert all(isinstance(ticker, ShortTicker) for ticker in best_opportunity)
+
+
+def test_get_last_prices_returns_same_data():
+    tickers = {
+        'BTC/USDT': {'close': 30000, 'timestamp': 0},
+        'ETH/USDT': {'close': 2000, 'timestamp': 0},
+    }
+    result = get_last_prices(0, tickers, [])
+    expected = [
+        ShortTicker(symbol=symbols.Symbol('BTC/USDT'), last_price=30000),
+        ShortTicker(symbol=symbols.Symbol('ETH/USDT'), last_price=2000),
+    ]
+    assert result == expected
