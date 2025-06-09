@@ -1,6 +1,9 @@
 # pylint: disable=W0702, C0325
 
-import ccxt.async_support as ccxt
+try:
+    import ccxt.async_support as ccxt
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    ccxt = None
 from typing import List, Tuple
 from dataclasses import dataclass
 import networkx as nx
@@ -94,6 +97,8 @@ def get_best_opportunity(tickers: List[ShortTicker], max_cycle: int = 10) -> Tup
 
 
 async def get_exchange_data(exchange_name):
+    if ccxt is None:
+        raise ImportError("ccxt is required to fetch exchange data")
     exchange_class = getattr(ccxt, exchange_name)
     exchange = exchange_class()
     tickers = await fetch_tickers(exchange)
