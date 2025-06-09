@@ -3,10 +3,13 @@
 import ccxt.async_support as ccxt
 from typing import List, Tuple
 from dataclasses import dataclass
+import logging
 import networkx as nx
 
 import octobot_commons.symbols as symbols
 import octobot_commons.constants as constants
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,7 +26,8 @@ async def fetch_tickers(exchange):
 def get_symbol_from_key(key_symbol: str) -> symbols.Symbol:
     try:
         return symbols.parse_symbol(key_symbol)
-    except:
+    except Exception as exc:
+        logger.debug("Failed to parse symbol '%s': %s", key_symbol, exc)
         return None
 
 
@@ -34,15 +38,21 @@ def is_delisted_symbols(exchange_time, ticker,
 
 
 def get_last_prices(exchange_time, tickers, ignored_symbols, whitelisted_symbols=None):
-    return [
-        ShortTicker(symbol=get_symbol_from_key(key),
-                    last_price=tickers[key]['close'])
-        for key, _ in tickers.items()
-        if tickers[key]['close'] is not None
-           and not is_delisted_symbols(exchange_time, tickers[key])
-           and str(get_symbol_from_key(key)) not in ignored_symbols
-           and (whitelisted_symbols is None or str(get_symbol_from_key(key)) in whitelisted_symbols)
-    ]
+    result = []
+    for key, _ in tickers.items():
+        if tickers[key]['close'] is None:
+            continue
+        if is_delisted_symbols(exchange_time, tickers[key]):
+            continue
+        symbol = get_symbol_from_key(key)
+        if symbol is None:
+            continue
+        if str(symbol) in ignored_symbols:
+            continue
+        if whitelisted_symbols is not None and str(symbol) not in whitelisted_symbols:
+            continue
+        result.append(ShortTicker(symbol=symbol, last_price=tickers[key]['close']))
+    return result
 
 
 def get_best_triangular_opportunity(tickers: List[ShortTicker]) -> Tuple[List[ShortTicker], float]:
